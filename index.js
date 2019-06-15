@@ -1,4 +1,4 @@
-import path from 'path';
+const path = require('path');
 
 const isExternal = id =>
   // rollup specific id
@@ -41,7 +41,7 @@ const findFullPathPackageName = id => {
 const renderList = (indent, list) =>
   list.map(item => '\n' + '  '.repeat(indent) + item).join('');
 
-export const packagesLogger = ({
+const packagesLogger = ({
   showPackages = false,
   showPathImports = false,
   showDependentPackages = false,
@@ -129,3 +129,5 @@ export const packagesLogger = ({
     },
   };
 };
+
+exports.packagesLogger = packagesLogger;
