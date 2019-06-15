@@ -20,7 +20,7 @@ const getPackageName = id => {
 
 const findFullPathPackageName = id => {
   const token = 'node_modules/';
-  const index = id.indexOf(token);
+  const index = id.lastIndexOf(token);
   if (index !== -1) {
     return getPackageName(id.slice(index + token.length));
   } else {
