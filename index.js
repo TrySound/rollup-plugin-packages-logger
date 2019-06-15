@@ -18,16 +18,6 @@ const getPackageName = id => {
   );
 };
 
-const getPathImport = id => {
-  return (
-    id
-      .split('/')
-      // consider scoped packages
-      .slice(id.startsWith('@') ? 2 : 1)
-      .join('/')
-  );
-};
-
 const findFullPathPackageName = id => {
   const token = 'node_modules/';
   const index = id.indexOf(token);
@@ -47,7 +37,7 @@ const packagesLogger = ({
   showDependentPackages = false,
 } = {}) => {
   const packagesSet = new Set();
-  const pathImportsMap = new Map();
+  const idsSet = new Set();
   const dependentPackagesMap = new Map();
 
   const renderDependentPackages = (indent, name) => {
@@ -59,32 +49,11 @@ const packagesLogger = ({
     }
   };
 
-  const renderPathImports = (indent, name) => {
-    const imports = Array.from(pathImportsMap.get(name)).sort();
-    if (imports.length !== 0) {
-      return renderList(
-        indent,
-        imports.map(d => {
-          if (showDependentPackages) {
-            return d + renderDependentPackages(indent + 1, `${name}/${d}`);
-          } else {
-            return d;
-          }
-        }),
-      );
-    } else {
-      return '';
-    }
-  };
-
   const renderPackages = indent => {
-    const packages = Array.from(packagesSet).sort();
+    const packages = Array.from(idsSet).sort();
     return renderList(
       indent,
       packages.map(name => {
-        if (showPathImports) {
-          return name + renderPathImports(indent + 1, name);
-        }
         if (showDependentPackages) {
           return name + renderDependentPackages(indent + 1, name);
         }
@@ -97,30 +66,22 @@ const packagesLogger = ({
     resolveId(importee, importer) {
       if (isExternal(importee)) {
         const packageName = getPackageName(importee);
-        const pathImport = getPathImport(importee);
         const dependentPackageName = findFullPathPackageName(importer);
+        const id = showPathImports ? importee : packageName;
         packagesSet.add(packageName);
+        idsSet.add(id);
 
-        if (pathImportsMap.has(packageName) === false) {
-          pathImportsMap.set(packageName, new Set());
-        }
-        // ignore importee without path imports
-        if (pathImport.length !== 0) {
-          pathImportsMap.get(packageName).add(pathImport);
-        }
-
-        const dependencyName = showPathImports ? importee : packageName;
-        if (dependentPackagesMap.has(dependencyName) === false) {
-          dependentPackagesMap.set(dependencyName, new Set());
+        if (dependentPackagesMap.has(id) === false) {
+          dependentPackagesMap.set(id, new Set());
         }
         if (dependentPackageName.length !== 0) {
-          dependentPackagesMap.get(dependencyName).add(dependentPackageName);
+          dependentPackagesMap.get(id).add(dependentPackageName);
         }
       }
     },
     generateBundle() {
       console.info('\n----------');
-      if (showPackages && packagesSet.size !== 0) {
+      if (showPackages && idsSet.size !== 0) {
         console.info(renderPackages(1));
         console.info('\n----------');
       }
